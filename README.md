@@ -63,3 +63,39 @@ This automation:
 ## 📂 Repository Structure
 - `Pride Shopify Centrano Product Automation.json` → The full n8n workflow  
 - `README.md` → Project documentation  
+
+## 🚀 How to Use This Automation
+
+This workflow automates the process of importing products from **Centrano** into a **Shopify store**.  
+
+### 1. Setup
+1. Import the sanitized JSON workflow into your n8n instance.  
+2. Set the required environment variables (for credentials and tokens). Create a `.env` file or configure them in Docker:  
+   ```bash
+   CENTRANO_EMAIL=your-email@example.com
+   CENTRANO_PASSWORD=your-password
+   SHOPIFY_ACCESS_TOKEN=shpat_xxx
+
+2. Run the Workflow
+
+Open the workflow in n8n and activate it.
+
+In the chat input (bottom of the screen), type the product search term you want to import.
+
+Example:
+
+north club g4
+
+
+The workflow will:
+
+Log into Centrano.
+
+Search for the product by your keyword.
+
+Scrape all product data (title, vendor, product type, description, specs, sizes, colours, images, price).
+
+Clean and normalize the data.
+
+Send the final product into your Shopify store through the Shopify API.
+
