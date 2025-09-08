@@ -1,0 +1,855 @@
+{
+  "name": "Pride Shopify Centrano Product Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.centrano.com/ro/login.php?action=process",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email_address",
+              "value": "={{$env.CENTRANO_EMAIL}}"
+            },
+            {
+              "name": "password",
+              "value": "={{$env.CENTRANO_PASSWORD}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2496,
+        -1408
+      ],
+      "id": "80ebe6d7-dc0a-4c5a-a95b-697e3958de7f",
+      "name": "Login Centrano"
+    },
+    {
+      "parameters": {
+        "url": "https://www.centrano.com/ajax_productlist.php?action=list_searchresult&keywords=north club g4",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "cookie",
+              "value": "={{ $json.data.replace('Cookie: ', '') }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"={{$env.CENTRANO_EMAIL}}\",\n  \"password\": \"={{$env.CENTRANO_PASSWORD}}\",\n  \"searchTerm\":\"deck cd1\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1504,
+        -1408
+      ],
+      "id": "98a80ccc-dcdb-4c40-ac90-a6abc14ad106",
+      "name": "Get product"
+    },
+    {
+      "parameters": {
+        "url": "https://15be8e00-2cad-49c5-b9a8-9de0f05f87bf-00-32f2uq32ciwv3.kirk.replit.dev/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "formid",
+              "value": "={{ $json.formid }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"email\": \"={{$env.CENTRANO_EMAIL}}\",\n  \"password\": \"={{$env.CENTRANO_PASSWORD}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2000,
+        -1408
+      ],
+      "id": "79ee9533-e8c4-4773-8a02-9afd9cd48183",
+      "name": "Get Cookie"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "formid",
+              "cssSelector": "input[name=\"formid\"]",
+              "returnValue": "value"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -2288,
+        -1408
+      ],
+      "id": "b6c59f5d-c451-4eb8-8558-d8ea00b26a69",
+      "name": "extract formid"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "cssSelector": "div[onclick^=\"open_product_box\"]",
+              "returnValue": "attribute"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -1216,
+        -1408
+      ],
+      "id": "e63b4bea-feeb-4e30-a3b3-95a79c90680b",
+      "name": "extractProducts_Id"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const onclickValue = item.json[\"\"].onclick;\n  const match = onclickValue.match(/open_product_box\\((\\d+)/);\n\n  return {\n    json: {\n      products_id: match ? match[1] : null\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -1408
+      ],
+      "id": "53022d92-b2ee-486e-84cb-4063b75aa0fa",
+      "name": "extractProductsId Clean"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.centrano.com/ajax_productinfo.php?products_id={{$json[\"products_id\"]}}&action=product_info&cPath=&page=&manufacturers_id=&keywords=club%2Bg4\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "cookie",
+              "value": "={{ $node[\"Get Cookie\"].json.data.replace('Cookie: ', '') }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"email\": \"={{$env.CENTRANO_EMAIL}}\",\n  \"password\": \"={{$env.CENTRANO_PASSWORD}}\",\n  \"searchTerm\": \"club g4\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -112,
+        -976
+      ],
+      "id": "22a306a3-3807-40b8-ace4-d5691952d1e0",
+      "name": "Get Product Assets"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = JSON.parse($json[\"data\"]);\nconst listing = raw.listing;\n\n// Extract colour\nconst colourMatch = listing.match(/Culoare:\\s*([^<]+)/i);\nconst colour = colourMatch ? colourMatch[1].trim() : \"\";\n\n// Extract all sizes\nconst sizeMatches = [...listing.matchAll(/Mărime:\\s*([0-9.]+)\"/g)];\nconst sizes = sizeMatches.map(m => m[1]);\n\nreturn [\n  {\n    json: {\n      description: raw.description || \"\",\n      specs: raw.specs || \"\",\n      specs2: raw.specs2 || \"\",\n      colours: colour,\n      sizes: sizes\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -976
+      ],
+      "id": "18bfa439-e6d1-4e7e-8a6d-75f4cce62d98",
+      "name": "extractProductData"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      html: $json[\"description\"] + $json[\"specs\"] + $json[\"specs2\"] + $json[\"colours\"] + $json[\"sizes\"]\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -976
+      ],
+      "id": "4f8302b6-098a-40e2-afb1-ce4a03ad22ae",
+      "name": "convertProductData"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "description",
+              "cssSelector": "div.small-24.columns "
+            },
+            {
+              "key": "specs",
+              "cssSelector": "div.small-24.medium-12.columns"
+            },
+            {
+              "key": "specs2",
+              "cssSelector": "div.small-24.medium-12.columns.end"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -976
+      ],
+      "id": "ca000936-a144-481a-b7c4-75ed60c03f1d",
+      "name": "showProductData"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = JSON.parse($json[\"data\"]);\nreturn [\n  {\n    html: data.listing // this is the actual HTML\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        -1504
+      ],
+      "id": "3bbaeb5f-51f3-44ca-a0c2-f76f910f11f1",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You're a professional Romanian Shopify product creator. Your job is to organise the input of this node so that it can be passed into a future node with which the product is created. \n\nThe data we need to extract from this input is the title of the product, the vendor, the product type, tags and price. \n\nThe vendor and tags. They're the same so their value as output will be the same. They can be found in the input of this node based on the product title. These are all the vendors/tags you'll see: Academy, Alien Workshop, Apex, Blueprint BMXFIX, BSD, Cadillac Wheels, Cadillac, Colony, Core, Crisp, DB Skimboards, Dial 911, Division, Dominator, Doomed, Drone Scooters, Eclat, Eight Ball, Essentials Skateboarding, Family, Fiction BMX, Figz Collection, Flexsurfing, Flypaper, Fuse, GoZone Skimboards, Graw Jump Ramps, Grit, Habitat Skateboards, HangUp, Heart Supply, Hella Grip, Hohing, Indo, JD Bug, Jessup, KFD, Kitefix, Longway, Lucky, Madrid, Mafia, Meow Skateboards, Native, North Scooters, Ocean Pacific, Panda, Pivot, Prime8, Primus, Proto, RAD Skateboards, Radio Bike Co, Rampage, Retrospec, Reversal, Revolution Supply Co, River, Roces, Rocker, Root Industries, Salt, Sisu, Skatemate, Speed Demons, Stolen, Striker, Supreme, Tall Order, Tempish, Tilt, TLC, Triple Eight, Triple Skate Hook, Trynyty, Venom, Venor Skates, Verb, Wethepeople, Whitespace, Wildcat, Zoo York. Choose the tag and vendor by matching the input with this list.\n\nThe product type is in the input as well. You have to match it from the input to this list: \"Adaptor\", \"Bar End\", \"BPM\", \"Casca\", \"Ceara\", \"Clamp\", \"Complete\", \"Deck\", \"Deck End\", \"Distantieri\",\n  \"Frana\", \"Furca\", \"Genunchiere\", \"Ghidon\", \"Glezniere\", \"Griptape\", \"Headset\", \"Imbracaminte\", \"Imbus\",\n  \"Inbus\", \"Kendama\", \"Mansoane\", \"Peg\", \"Roti\", \"Rulmenti\", \"Sporting Goods\", \"Stand\", \"Sticker\",\n  \"Suruburi\", \"Talpici\"\n\nThe product title usually comes a little off. Your job is to remove \"Trotineta Freestyle\" from the title and always have the product type first. For example, instead of \"Tilt Formula Deck Trotineta Freestyle\" it should be \"Deck Tilt Formula\"\n\nThe price is the highest number from the input which has a euro sign close to it. Take it and multiply by 5. ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        -1632
+      ],
+      "id": "634fa2fd-7cf3-4cf7-9629-153e018c5777",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-3.5-turbo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -1392
+      ],
+      "id": "61b60998-c271-4a45-b09d-9b41c51affe0",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "JeC8kzknB8Xqy9s7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1440,
+        -832
+      ],
+      "id": "e144e990-c48a-430e-ac06-f139ea3380ec",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "I want you to add a product",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -1376,
+        -1024
+      ],
+      "id": "d7d91779-545d-451c-85f4-54ecdae2b08f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "div.column.column-block"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -2128
+      ],
+      "id": "2cf18b70-8d70-457e-8041-f92369105fa3",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let t = (item.json.title ?? \"\").toString();\n\n  // Normalize whitespace\n  t = t.replace(/[\\r\\n\\t]+/g, \" \").replace(/\\s+/g, \" \").trim();\n\n  // Remove URLs (http, https, or protocol-relative //images...)\n  t = t.replace(/(?:https?:)?\\/\\/[^\\s)\\]}>,]+/gi, \" \").trim();\n\n  // Remove \"Trotineta Freestyle\"\n  t = t.replace(/\\bTrotinet[ăa]\\s*Freestyle\\b/gi, \" \").trim();\n\n  // Remove prices\n  t = t.replace(/(?:€|£|\\$)\\s*\\d+(?:[.,]\\d{2})?|\\b\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d{2})\\s*(?:€|£|\\$|lei|ron)?/gi, \" \").trim();\n\n  // Remove stray symbols (keep letters, numbers, hyphens, spaces)\n  t = t.replace(/[^\\p{L}\\p{N}\\- ]+/gu, \" \").trim();\n\n  // Collapse spaces\n  t = t.replace(/\\s{2,}/g, \" \").trim();\n\n  // Collapse duplicated full phrase\n  const dup = t.match(/^(.+?)\\s+\\1$/i);\n  if (dup) t = dup[1];\n\n  // --- Reorder words: move last word to the front ---\n  const words = t.split(/\\s+/);\n  if (words.length > 1) {\n    const last = words.pop();\n    words.unshift(last);\n  }\n  const rearranged = words.join(\" \");\n\n  return { json: { title: rearranged } };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -2336
+      ],
+      "id": "03e1d7ec-ab36-4bf7-801a-8e5419ee8d60",
+      "name": "extractTitle"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input example (items[0].json.title):\n// \"North Willow G5 Deck Trotinetă Freestyle\\n[//images.centrano.com/...]\\n94,98 €\\n189,95 €\\n\"\n\nconst BRANDS = [\n  \"Academy\",\"Alien Workshop\",\"Apex\",\"Blueprint BMXFIX\",\"BSD\",\"Cadillac Wheels\",\"Cadillac\",\n  \"Colony\",\"Core\",\"Crisp\",\"DB Skimboards\",\"Dial 911\",\"Division\",\"Dominator\",\"Doomed\",\n  \"Drone Scooters\",\"Eclat\",\"Eight Ball\",\"Essentials Skateboarding\",\"Family\",\"Fiction BMX\",\n  \"Figz Collection\",\"Flexsurfing\",\"Flypaper\",\"Fuse\",\"GoZone Skimboards\",\"Graw Jump Ramps\",\n  \"Grit\",\"Habitat Skateboards\",\"HangUp\",\"Heart Supply\",\"Hella Grip\",\"Hohing\",\"Indo\",\n  \"JD Bug\",\"Jessup\",\"KFD\",\"Kitefix\",\"Longway\",\"Lucky\",\"Madrid\",\"Mafia\",\"Meow Skateboards\",\n  \"Native\",\"North Scooters\",\"Ocean Pacific\",\"Panda\",\"Pivot\",\"Prime8\",\"Primus\",\"Proto\",\n  \"RAD Skateboards\",\"Radio Bike Co\",\"Rampage\",\"Retrospec\",\"Reversal\",\"Revolution Supply Co\",\n  \"River\",\"Roces\",\"Rocker\",\"Root Industries\",\"Salt\",\"Sisu\",\"Skatemate\",\"Speed Demons\",\n  \"Stolen\",\"Striker\",\"Supreme\",\"Tall Order\",\"Tempish\",\"Tilt\",\"TLC\",\"Triple Eight\",\n  \"Triple Skate Hook\",\"Trynyty\",\"Venom\",\"Venor Skates\",\"Verb\",\"Wethepeople\",\"Whitespace\",\n  \"Wildcat\",\"Zoo York\"\n];\n\n// Escape for regex and make a pattern that tolerates flexible spacing between words.\nfunction brandToRegex(brand) {\n  const escaped = brand.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  return new RegExp(`\\\\b${escaped.replace(/\\s+/g, \"\\\\s+\")}\\\\b`, \"i\");\n}\n\nfunction findVendor(title) {\n  const t = (title ?? \"\").toString().replace(/\\s+/g, \" \").trim();\n\n  // 1) Try exact (flex-space) match, preferring the longest brand first\n  const brandsByLen = [...BRANDS].sort((a, b) => b.length - a.length);\n  for (const b of brandsByLen) {\n    if (brandToRegex(b).test(t)) return b;\n  }\n\n  // 2) Heuristic: if the first word of a multi-word brand appears at the start of the title,\n  //    map to that brand (handles cases like \"North Willow...\" -> \"North Scooters\").\n  const firstWord = t.split(/\\s+/)[0];\n  for (const b of brandsByLen) {\n    const bw = b.split(/\\s+/)[0];\n    if (bw.toLowerCase() === firstWord.toLowerCase()) return b;\n  }\n\n  // 3) As a fallback, check if any brand's first word exists within the first 3 words.\n  const top3 = t.split(/\\s+/).slice(0, 3).map(s => s.toLowerCase());\n  for (const b of brandsByLen) {\n    const bw = b.split(/\\s+/)[0].toLowerCase();\n    if (top3.includes(bw)) return b;\n  }\n\n  return \"\";\n}\n\nreturn items.map(item => {\n  const title = item.json.title ?? \"\";\n  const vendor = findVendor(title);\n  return {\n    json: {\n      vendor,\n      tag: vendor\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -2032
+      ],
+      "id": "1404faf2-f7d6-48d9-985e-05ba5d2a8a5b",
+      "name": "extractVendor"
+    },
+    {
+      "parameters": {
+        "jsCode": "const TYPES = [\n  \"Adaptor\",\"Bar End\",\"BPM\",\"Casca\",\"Ceara\",\"Clamp\",\"Complete\",\"Deck\",\"Deck End\",\"Distantieri\",\n  \"Frana\",\"Furca\",\"Genunchiere\",\"Ghidon\",\"Glezniere\",\"Griptape\",\"Headset\",\"Imbracaminte\",\"Imbus\",\n  \"Inbus\",\"Kendama\",\"Mansoane\",\"Peg\",\"Roti\",\"Rulmenti\",\"Sporting Goods\",\"Stand\",\"Sticker\",\n  \"Suruburi\",\"Talpici\"\n];\n\n// Escape regex safely\nfunction typeToRegex(type) {\n  const escaped = type.replace(/[.*+?^${}()|[\\]\\\\]/g, \"\\\\$&\");\n  return new RegExp(`\\\\b${escaped.replace(/\\s+/g, \"\\\\s+\")}\\\\b`, \"i\");\n}\n\nfunction findType(title) {\n  const t = (title ?? \"\").toString().replace(/\\s+/g, \" \").trim();\n\n  // 1) Exact match first (longest types first, so \"Deck End\" matches before \"Deck\")\n  const typesByLen = [...TYPES].sort((a, b) => b.length - a.length);\n  for (const type of typesByLen) {\n    if (typeToRegex(type).test(t)) return type;\n  }\n\n  return \"\";\n}\n\nreturn items.map(item => {\n  const title = item.json.title ?? \"\";\n  const product_type = findType(title);\n\n  return {\n    json: {\n      product_type\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -1840
+      ],
+      "id": "09b21c95-2145-432a-81e6-100f963a8831",
+      "name": "extractType"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const title = (item.json.title ?? \"\").toString();\n\n  // Match numbers followed by optional space and € symbol\n  const matches = title.match(/\\d+[.,]?\\d*\\s*€/g) || [];\n\n  // Convert to float (remove € and replace , with .)\n  const numbers = matches.map(m =>\n    parseFloat(m.replace(\"€\", \"\").replace(\",\", \".\").trim())\n  ).filter(n => !isNaN(n));\n\n  let price = 0;\n  if (numbers.length > 0) {\n    const highest = Math.max(...numbers);\n    price = Math.ceil(highest * 5); // multiply by 5 and round up\n  }\n\n  return {\n    json: {\n      price\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -1648
+      ],
+      "id": "74e8470b-b1a6-4729-bd1f-d29fb8b75e7f",
+      "name": "extractPrice"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        912,
+        -2016
+      ],
+      "id": "3b79c9be-e067-4202-9f5d-b734b00ff173",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all incoming items into a single item\n// Later you can use {{$json.title}} safely in the Shopify node.\nconst merged = Object.assign({}, ...items.map(i => i.json));\nreturn [{ json: merged }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        80
+      ],
+      "id": "029d64c7-f308-4b38-afab-83d25068f670",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "product",
+        "title": "={{ $json.title }}",
+        "additionalFields": {
+          "body_html": "={{ $json.description }}",
+          "images": [
+            {
+              "src": "={{ $json.imageUrls[0] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.shopify",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        -992
+      ],
+      "id": "9a4990fb-a0c0-42e2-b787-9fb8cbd48283",
+      "name": "Create a product",
+      "credentials": {
+        "shopifyAccessTokenApi": {
+          "id": "ZBugTVsJ4aA7PTPV",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://pride-scooter.myshopify.com/admin/api/2024-04/products.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Shopify-Access-Token",
+              "value": "={{$env.SHOPIFY_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    product: {\n      title: $json.title,\n      body_html: $json.description_html + $json.specs_html,\n      vendor: $json.vendor,\n      product_type: $json.product_type,\n      tags: Array.isArray($json.tag) ? $json.tag.join(\", \") : ($json.tag || \"\"),\n      images: Array.from(new Set($json.imageUrls || []))\n        .filter(u => /^https?:\\/\\//i.test(u))\n        .map(u => ({ src: u })),\n      variants: [\n        { price: String($json.price) }\n      ],\noptions: ($json.options || []).map(o => ({\n        name: String(o.name),\n        values: (o.values || []).map(v => String(v))\n      })),\n variants: ($json.variants || []).map(v => ({\n        option1: String(v.option1),\n        option2: String(v.option2),\n        price:   String(v.price),               // Shopify expects string/number\n        // optional conveniences:\n        inventory_management: \"shopify\",\n        inventory_policy: \"deny\",\n        requires_shipping: true\n      }))\n    }\n  })\n}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        80
+      ],
+      "id": "a1752dc9-84e2-4f3a-96bf-9a2e038a84de",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://0f8fde237260.ngrok-free.app/centrano/scrape-product-images",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"={{$env.CENTRANO_EMAIL}}\",\n  \"password\": \"={{$env.CENTRANO_PASSWORD}}\",\n  \"searchTerm\": \"{{ $json.chatInput }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -576,
+        64
+      ],
+      "id": "690e73b2-df1b-4f35-8651-25ec0b129339",
+      "name": "Get Images via Puppeteer"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -112,
+        80
+      ],
+      "id": "5200e57b-9d6b-4c6c-af98-0f624a210694",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      html: $json[\"description\"] + $json[\"specs\"] + $json[\"specs2\"]\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -976
+      ],
+      "id": "b5d0ded5-22e4-4626-8aae-634f41b295fa",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://pride-scooter.myshopify.com/admin/api/2024-07/variants/{{ $json.id }}.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Shopify-Access-Token",
+              "value": "={{$env.SHOPIFY_ACCESS_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"variant\": {\n    \"id\": {{ $json.id }},\n    \"inventory_policy\": \"continue\",\n    \"taxable\": false\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1136,
+        80
+      ],
+      "id": "86d8d097-11e3-48a6-9367-dcafaba2fabe",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $json[\"product\"].variants.map(v => ({ json: v }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        80
+      ],
+      "id": "0ba9183d-b5fc-419b-8d05-5611069349f9",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1088,
+        64
+      ],
+      "id": "0c20c1e0-5ab3-4ceb-bc52-77d24926f980",
+      "name": "When chat message received",
+      "webhookId": "15ead02d-e5a1-4c3a-b217-3c662686fb4c"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Login Centrano": {
+      "main": [
+        [
+          {
+            "node": "extract formid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Cookie": {
+      "main": [
+        [
+          {
+            "node": "Get product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract formid": {
+      "main": [
+        [
+          {
+            "node": "Get Cookie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get product": {
+      "main": [
+        [
+          {
+            "node": "extractProducts_Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extractProducts_Id": {
+      "main": [
+        [
+          {
+            "node": "extractProductsId Clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extractProductsId Clean": {
+      "main": [
+        []
+      ]
+    },
+    "Get Product Assets": {
+      "main": [
+        [
+          {
+            "node": "extractProductData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extractProductData": {
+      "main": [
+        [
+          {
+            "node": "convertProductData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convertProductData": {
+      "main": [
+        [
+          {
+            "node": "showProductData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "showProductData": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "extractTitle",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "extractVendor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "extractPrice",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "extractType",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extractVendor": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "extractType": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "extractPrice": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "extractTitle": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        []
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Images via Puppeteer": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Get Images via Puppeteer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f563be16-7011-43b2-91db-3d3fce0230a3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd460af6451fbb144cb810781a6652e8323f78fc20b3dc3ba9d1d1f69d29b9ee"
+  },
+  "id": "zzV8RwRhY8cGhE8l",
+  "tags": []
+}
