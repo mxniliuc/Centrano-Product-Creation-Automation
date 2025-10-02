@@ -1,11 +1,11 @@
-# 🛒 Shopify Product Creation Automation (n8n + Puppeteer + Centrano)
+#  Shopify Product Creation Automation (n8n + Puppeteer + Centrano)
 
 This project is an **automation workflow** built in [n8n](https://n8n.io/) that connects a supplier’s website (Centrano) to a Shopify store.  
 It automatically logs in, searches for products, extracts structured product data, and creates products in Shopify via API.
 
 ---
 
-## 🔧 Features
+##  Features
 - **Automated login & session handling** with Centrano  
 - **Web scraping with Puppeteer & n8n** to collect:
   - Product title, vendor, product type, tags
@@ -21,7 +21,7 @@ It automatically logs in, searches for products, extracts structured product dat
 
 ---
 
-## 🖥️ Tech Stack
+##  Tech Stack
 - [n8n](https://n8n.io/) (workflow automation platform)  
 - Puppeteer (headless browser for scraping images)  
 - JavaScript (custom nodes for data cleaning/parsing)  
@@ -29,7 +29,7 @@ It automatically logs in, searches for products, extracts structured product dat
 
 ---
 
-## 🚀 Workflow Overview
+##  Workflow Overview
 1. **Login Node** → Authenticate with Centrano  
 2. **Scraper Nodes** → Extract product details & images  
 3. **Data Cleaning Nodes** → Normalize title, detect vendor/product type, format price  
@@ -37,7 +37,7 @@ It automatically logs in, searches for products, extracts structured product dat
 
 ---
 
-## 📸 Example Output
+##  Example Output
 **Input (Centrano product page):**  
 `Tilt Formula Deck Trotineta Freestyle – 189,95 €`  
 
@@ -51,7 +51,7 @@ It automatically logs in, searches for products, extracts structured product dat
 
 ---
 
-## ⚡ Why This Matters
+##  Why This Matters
 Manually copying product data into Shopify is repetitive and error-prone.  
 This automation:
 - Saves hours of manual work  
@@ -60,11 +60,11 @@ This automation:
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 - `Pride Shopify Centrano Product Automation.json` → The full n8n workflow  
 - `README.md` → Project documentation  
 
-## 🚀 How to Use This Automation
+##  How to Use This Automation
 
 This workflow automates the process of importing products from **Centrano** into a **Shopify store**.  
 
