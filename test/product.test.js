@@ -191,6 +191,7 @@ test("links: the title's model name comes from Centrano's product name", () => {
   assert.equal(modelFromTitle("Tilt Formula Deck Trotinetă Freestyle"), "Tilt Formula Deck");
   assert.equal(modelFromTitle("CORE Grips Trotinetă"), "CORE Grips");
   assert.equal(modelFromTitle("Indo Bug Trotineta Trambulina"), "Indo Bug Trotineta Trambulina");
+  assert.equal(modelFromTitle("Tilt Durare Barbed Roți Trotinetă Freestyle Pachet 2 buc"), "Tilt Durare Barbed Roți");
 
   assert.equal(buildProduct(tiltDeck, null).title, "Deck Tilt Formula");
   const helmet = { ...tiltDeck, brand: "Core", rawTitle: "CORE Action Sports Cască", specsHtml: "" };
