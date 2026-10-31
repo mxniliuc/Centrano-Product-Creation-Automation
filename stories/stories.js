@@ -1,8 +1,11 @@
 // stories/stories.js
 // One entry per Instagram story (1080x1920). Coordinates are pixels on the story.
 //
+//   link      product page for the story's link sticker (also listed in stories/out/links.txt)
+//   linkSpot  { x, y, w }: where the link sticker goes (centre, width); a "TAP TO SHOP" pointer is drawn above it
 //   brand / title / subtitle   the three header lines
 //   badge     { price, from? }  red price starburst ("from" adds e.g. "DE LA" above the price)
+//   tag       e.g. "PRE-ORDER": black pill top-left (or { text, x, y, rotate })
 //   images    [{ src, x, y, width, rotate }]  product photos (white background), centred on x/y
 //   labels    [{ text, x, y, rotate, size }]  text along a product, e.g. colour names
 //   dims      [{ text, x1, y1, x2, y2, color, textOffset }]  measurement arrows
@@ -10,6 +13,8 @@
 module.exports = [
   {
     slug: "tilt-nikita",
+    link: "https://pridescootering.com/products/deck-tilt-nikita",
+    linkSpot: { x: 446, y: 1191, w: 500 },
     brand: "TILT",
     title: "NIKITA DECK",
     subtitle: "MIDNIGHT",
@@ -23,6 +28,8 @@ module.exports = [
   },
   {
     slug: "tilt-formula-reaper",
+    link: "https://pridescootering.com/products/deck-tilt-formula-reaper",
+    linkSpot: { x: 346, y: 1111, w: 500 },
     brand: "TILT",
     title: "FORMULA REAPER DECK",
     subtitle: "7.0\" × 23.0\"",
@@ -31,61 +38,55 @@ module.exports = [
   },
   {
     slug: "tilt-durare-barbed",
+    link: "https://pridescootering.com/products/roti-tilt-durare-barbed",
+    linkSpot: { x: 826, y: 1190, w: 380 },
     brand: "TILT",
     title: "DURARE BARBED WHEELS",
-    subtitle: "NEW COLORWAYS",
+    subtitle: "CRIMSON · BLACK 110MM · FOREST 120MM",
     badge: { price: "424.99", from: "DE LA" },
     images: [
-      { src: "stories/assets/tilt-durare-barbed-crimson.jpg", x: 300, y: 1000, width: 450 },
-      { src: "stories/assets/tilt-durare-barbed-black.jpg", x: 560, y: 1360, width: 450 },
-      { src: "stories/assets/tilt-durare-barbed-forest.jpg", x: 830, y: 1700, width: 480 },
-    ],
-    labels: [
-      { text: "CRIMSON · 110MM", x: 60, y: 1730, size: 44, align: "left" },
-      { text: "BLACK · 110MM", x: 60, y: 1797, size: 44, align: "left" },
-      { text: "FOREST · 120MM", x: 60, y: 1864, size: 44, align: "left" },
+      { src: "stories/assets/tilt-durare-barbed-crimson.jpg", x: 215, y: 960, width: 400 },
+      { src: "stories/assets/tilt-durare-barbed-black.jpg", x: 420, y: 1290, width: 400 },
+      { src: "stories/assets/tilt-durare-barbed-forest.jpg", x: 690, y: 1630, width: 430 },
     ],
   },
   {
     slug: "core-sl3",
+    link: "https://pridescootering.com/products/trotineta-core-sl3",
+    linkSpot: { x: 366, y: 812, w: 400 },
     brand: "CORE",
     title: "SL3 COMPLETE",
-    subtitle: "3 COLORWAYS",
+    subtitle: "BLACK · CHROME/TEAL · RED",
     badge: { price: "1384.99" },
     images: [
-      { src: "stories/assets/core-sl3-black-side.jpg", x: 240, y: 1110, width: 420 },
-      { src: "stories/assets/core-sl3-chrome-teal-side.jpg", x: 520, y: 1330, width: 480 },
-      { src: "stories/assets/core-sl3-red-side.jpg", x: 815, y: 1500, width: 410 },
-    ],
-    labels: [
-      { text: "BLACK", x: 60, y: 1745, size: 44, align: "left" },
-      { text: "CHROME / TEAL", x: 60, y: 1810, size: 44, align: "left" },
-      { text: "RED", x: 60, y: 1875, size: 44, align: "left" },
+      { src: "stories/assets/core-sl3-black-side.jpg", x: 220, y: 1250, width: 378 },
+      { src: "stories/assets/core-sl3-chrome-teal-side.jpg", x: 490, y: 1400, width: 432 },
+      { src: "stories/assets/core-sl3-red-side.jpg", x: 775, y: 1540, width: 369 },
     ],
   },
   {
     slug: "core-sl3-mini",
+    link: "https://pridescootering.com/products/trotineta-core-sl3-mini",
+    linkSpot: { x: 626, y: 1192, w: 400 },
     brand: "CORE",
     title: "SL3 MINI COMPLETE",
-    subtitle: "3 COLORWAYS",
+    subtitle: "BLACK · CHROME/TEAL · RED",
     badge: { price: "1384.99" },
     // same height for all three (the photos have different shapes)
     images: [
-      { src: "stories/assets/core-sl3-mini-black-side.jpg", x: 240, y: 1090, width: 440 },
-      { src: "stories/assets/core-sl3-mini-chrome-teal-side.jpg", x: 560, y: 1300, width: 616 },
-      { src: "stories/assets/core-sl3-mini-red-side.jpg", x: 830, y: 1490, width: 608 },
-    ],
-    labels: [
-      { text: "BLACK", x: 60, y: 1745, size: 44, align: "left" },
-      { text: "CHROME / TEAL", x: 60, y: 1810, size: 44, align: "left" },
-      { text: "RED", x: 60, y: 1875, size: 44, align: "left" },
+      { src: "stories/assets/core-sl3-mini-black-side.jpg", x: 230, y: 1250, width: 400 },
+      { src: "stories/assets/core-sl3-mini-chrome-teal-side.jpg", x: 530, y: 1430, width: 560 },
+      { src: "stories/assets/core-sl3-mini-red-side.jpg", x: 805, y: 1590, width: 552 },
     ],
   },
   {
     slug: "core-sl3-6-forged",
+    link: "https://pridescootering.com/products/deck-core-sl3-6-forged",
+    linkSpot: { x: 280, y: 1575, w: 400 },
     brand: "CORE",
     title: "SL3 6\" FORGED DECK",
-    subtitle: "21\" · 3 COLORWAYS",
+    subtitle: "3 COLORWAYS",
+    tag: "PRE-ORDER",
     badge: { price: "824.99" },
     images: [
       // parallel decks 400px apart, each colour name in the gap above its deck (like the Aztek story)
@@ -94,6 +95,8 @@ module.exports = [
       { src: "stories/assets/core-sl3-6-polished-top.jpg", x: 913, y: 1744, width: 1200, rotate: -50 },
     ],
     labels: [
+      { text: "6\" × 21\"", x: 60, y: 832, size: 46, align: "left" },
+      { text: "15.2 × 53.3 CM", x: 60, y: 886, size: 30, align: "left" },
       { text: "BLACK", x: 221, y: 1033, size: 56, rotate: -50 },
       { text: "RED", x: 527, y: 1290, size: 56, rotate: -50 },
       { text: "POLISHED", x: 834, y: 1547, size: 56, rotate: -50 },
@@ -101,22 +104,38 @@ module.exports = [
   },
   {
     slug: "core-sl3-sponseller",
+    link: "https://pridescootering.com/products/deck-core-sl3-corey-sponseller-signature",
+    linkSpot: { x: 506, y: 1211, w: 500 },
     brand: "CORE",
     title: "SL3 SIGNATURE DECK",
     subtitle: "COREY SPONSELLER",
+    tag: "PRE-ORDER",
     badge: { price: "824.99" },
     images: [{ src: "stories/assets/core-sl3-sponseller.jpg", x: 540, y: 1430, width: 1200, rotate: -14 }],
+    labels: [
+      { text: "5.25\" × 20\"", x: 60, y: 832, size: 46, align: "left" },
+      { text: "13.3 × 50.8 CM", x: 60, y: 886, size: 30, align: "left" },
+    ],
   },
   {
     slug: "core-sl3-tang",
+    link: "https://pridescootering.com/products/deck-core-sl3-signature-brandon-tang",
+    linkSpot: { x: 506, y: 1211, w: 500 },
     brand: "CORE",
     title: "SL3 SIGNATURE DECK",
-    subtitle: "BRANDON TANG · 19.3\"",
+    subtitle: "BRANDON TANG",
+    tag: "PRE-ORDER",
     badge: { price: "824.99" },
     images: [{ src: "stories/assets/core-sl3-tang.jpg", x: 540, y: 1430, width: 1200, rotate: -14 }],
+    labels: [
+      { text: "5.25\" × 19.3\"", x: 60, y: 832, size: 46, align: "left" },
+      { text: "13.3 × 49 CM", x: 60, y: 886, size: 30, align: "left" },
+    ],
   },
   {
     slug: "tilt-miller",
+    link: "https://pridescootering.com/products/deck-tilt-miller-6-5",
+    linkSpot: { x: 446, y: 1191, w: 500 },
     brand: "TILT",
     title: "MILLER 6.5\" DECK",
     subtitle: "POLISHED",
@@ -129,6 +148,8 @@ module.exports = [
   },
   {
     slug: "tilt-eden-gagliano-wheels",
+    link: "https://pridescootering.com/products/roti-tilt-eden-gagliano",
+    linkSpot: { x: 306, y: 921, w: 500 },
     brand: "TILT",
     title: "EDEN GAGLIANO WHEELS",
     subtitle: "RAW · 110MM · 88A",
@@ -137,6 +158,8 @@ module.exports = [
   },
   {
     slug: "tilt-gagliano-bars",
+    link: "https://pridescootering.com/products/ghidon-tilt-stage-i-gagliano",
+    linkSpot: { x: 796, y: 1192, w: 400 },
     brand: "TILT",
     title: "STAGE I GAGLIANO BARS",
     subtitle: "710MM × 610MM",
@@ -145,6 +168,8 @@ module.exports = [
   },
   {
     slug: "tilt-griptape",
+    link: "https://pridescootering.com/search?q=griptape+tilt&type=product",
+    linkSpot: { x: 746, y: 1192, w: 400 },
     brand: "TILT",
     title: "GRIPTAPE",
     subtitle: "5 NEW DESIGNS",
@@ -157,11 +182,68 @@ module.exports = [
       { src: "stories/assets/tilt-grip-puncture.jpg", x: 930, y: 1650, width: 175, rotate: -25 },
     ],
     labels: [
-      { text: "NEO", x: 50, y: 1650, size: 40, align: "left" },
-      { text: "KNOCKOUT", x: 50, y: 1708, size: 40, align: "left" },
-      { text: "INKED LOGO", x: 50, y: 1766, size: 40, align: "left" },
-      { text: "CENOBITE GLOW", x: 50, y: 1824, size: 40, align: "left" },
-      { text: "PUNCTURE", x: 50, y: 1882, size: 40, align: "left" },
+      { text: "NEO", x: 50, y: 700, size: 40, align: "left" },
+      { text: "KNOCKOUT", x: 50, y: 756, size: 40, align: "left" },
+      { text: "INKED LOGO", x: 50, y: 812, size: 40, align: "left" },
+      { text: "CENOBITE GLOW", x: 50, y: 868, size: 40, align: "left" },
+      { text: "PUNCTURE", x: 50, y: 924, size: 40, align: "left" },
+    ],
+  },
+  {
+    slug: "pinnacle-staple-55",
+    link: "https://pridescootering.com/products/deck-pinnacle-staple-5-5",
+    linkSpot: { x: 356, y: 1141, w: 500 },
+    brand: "PINNACLE",
+    brandSize: 190,
+    brandTop: 322,
+    title: "STAPLE 5.5\" DECK",
+    subtitle: "JAYDEN SHARMAN",
+    tag: "PRE-ORDER",
+    badge: { price: "894.99" },
+    images: [{ src: "stories/assets/pinnacle-staple-55-top.jpg", x: 540, y: 1440, width: 1060, rotate: -8 }],
+    dims: [{ text: "50.8cm / 20\"", x1: 148, y1: 1318, x2: 1038, y2: 1193 }],
+    labels: [
+      { text: "5.5\" × 20\"", x: 60, y: 832, size: 46, align: "left" },
+      { text: "14 × 50.8 CM", x: 60, y: 886, size: 30, align: "left" },
+    ],
+  },
+  {
+    slug: "pinnacle-staple-49",
+    link: "https://pridescootering.com/products/deck-pinnacle-staple-4-9",
+    linkSpot: { x: 200, y: 1500, w: 380 },
+    brand: "PINNACLE",
+    brandSize: 190,
+    brandTop: 322,
+    title: "STAPLE 4.9\" DECK",
+    subtitle: "2 COLORWAYS",
+    tag: "PRE-ORDER",
+    badge: { price: "844.99", from: "DE LA" },
+    images: [
+      { src: "stories/assets/pinnacle-staple-49-black-top.jpg", x: 330, y: 1250, width: 1250, rotate: -50 },
+      { src: "stories/assets/pinnacle-staple-49-sharman-top.jpg", x: 659, y: 1526, width: 1250, rotate: -50 },
+    ],
+    labels: [
+      { text: "4.9\" × 18.5\"", x: 60, y: 832, size: 46, align: "left" },
+      { text: "12.5 × 47 CM", x: 60, y: 886, size: 30, align: "left" },
+      { text: "BLACK", x: 241, y: 1044, size: 56, rotate: -50 },
+      { text: "JAYDEN SHARMAN", x: 570, y: 1320, size: 52, rotate: -50 },
+    ],
+  },
+  {
+    slug: "pinnacle-staple-bars",
+    link: "https://pridescootering.com/products/ghidon-pinnacle-staple-chromoly-y",
+    linkSpot: { x: 666, y: 1221, w: 500 },
+    brand: "PINNACLE",
+    brandSize: 190,
+    brandTop: 322,
+    title: "STAPLE CHROMOLY Y BARS",
+    subtitle: "BLACK · 2 SIZES",
+    tag: "PRE-ORDER",
+    badge: { price: "499.99" },
+    images: [{ src: "stories/assets/pinnacle-staple-bars.jpg", x: 520, y: 1420, width: 1250, rotate: -6 }],
+    labels: [
+      { text: "620 × 580 MM", x: 60, y: 832, size: 42, align: "left" },
+      { text: "660 × 610 MM", x: 60, y: 892, size: 42, align: "left" },
     ],
   },
 ];

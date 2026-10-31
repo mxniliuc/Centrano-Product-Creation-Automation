@@ -64,6 +64,32 @@ function image(img, file) {
     transform:translate(-50%,-50%) rotate(${img.rotate || 0}deg)${flip}; z-index:${img.z || 1}">`;
 }
 
+// A black pill with white text (e.g. "PRE-ORDER"), anchored on its left edge at (x, y)
+function tag(t) {
+  return `<div class="tag" style="left:${t.x ?? 60}px; top:${t.y ?? 730}px; font-size:${t.size || 50}px;
+    transform:translate(0,-50%) rotate(${t.rotate ?? -4}deg)">${esc(t.text)}</div>`;
+}
+
+// "TAP TO SHOP" + an arrow pointing down at where the link sticker will be placed.
+// The text has a white backing so it stays readable where the sticker overlaps a product.
+function pointer(spot, text) {
+  const h = Math.round(spot.w * 0.2);
+  const top = spot.y - h / 2;
+  return `
+  <div class="pointer" style="left:${spot.x}px; top:${top - 62}px">${esc(text)}</div>
+  <svg class="dim" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <line x1="${spot.x}" y1="${top - 38}" x2="${spot.x}" y2="${top - 18}" stroke="#000" stroke-width="6"/>
+    <polygon points="${spot.x - 14},${top - 22} ${spot.x + 14},${top - 22} ${spot.x},${top - 4}" fill="#000"/>
+  </svg>`;
+}
+
+// Mock Instagram link sticker, only for previews (Instagram adds the real one)
+function mockSticker(spot, url) {
+  const h = Math.round(spot.w * 0.2);
+  const host = new URL(url).hostname.replace(/^www\./, "").toUpperCase();
+  return `<div class="mock" style="left:${spot.x - spot.w / 2}px; top:${spot.y - h / 2}px; width:${spot.w}px; height:${h}px; font-size:${Math.round(h * 0.34)}px">🔗 ${esc(host)}</div>`;
+}
+
 // Text written along a product, e.g. a colour name, centred on (x, y)
 function label(l) {
   const anchor = l.align === "left" ? "translate(0,-50%)" : "translate(-50%,-50%)";
@@ -98,7 +124,7 @@ function dim(d) {
     transform:translate(-50%,-50%) rotate(${ta}deg)">${esc(d.text)}</div>`;
 }
 
-async function html(story) {
+async function html(story, { preview = false } = {}) {
   const imgs = [];
   for (const img of story.images || []) imgs.push(image(img, await trimmed(img.src)));
   return `<!doctype html>
@@ -117,6 +143,13 @@ async function html(story) {
   .dim { position: absolute; left: 0; top: 0; z-index: 3; }
   .dimtext { position: absolute; font-weight: 700; white-space: nowrap; z-index: 3; }
   .badge { position: absolute; z-index: 6; }
+  .pointer { position: absolute; z-index: 7; transform: translateX(-50%); background: #fff; padding: 4px 14px 2px calc(14px + 0.14em);
+             border-radius: 10px; font-weight: 900; font-size: 34px; letter-spacing: 0.14em; white-space: nowrap; line-height: 1.1; }
+  .mock { position: absolute; z-index: 8; background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.25);
+          display: flex; align-items: center; justify-content: center; font-family: -apple-system, Helvetica, sans-serif;
+          font-weight: 700; color: #3a7bf0; letter-spacing: 0.02em; }
+  .tag { position: absolute; z-index: 6; background: #000; color: #fff; font-weight: 900; letter-spacing: 0.12em;
+         padding: 14px 30px 14px calc(30px + 0.12em); border-radius: 12px; white-space: nowrap; transform-origin: left center; }
   .badge svg { position: absolute; left: 0; top: 0; }
   .price { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-weight: 900; }
   .price .fit { display: flex; flex-direction: column; align-items: center; transform-origin: center; }
@@ -135,15 +168,24 @@ async function html(story) {
   ${(story.labels || []).map(label).join("\n")}
   ${(story.dims || []).map(dim).join("\n")}
   ${badge(story.badge)}
+  ${story.tag ? tag(typeof story.tag === "string" ? { text: story.tag } : story.tag) : ""}
+  ${story.linkSpot ? pointer(story.linkSpot, story.pointerText || "TAP TO SHOP") : ""}
+  ${preview && story.linkSpot && story.link ? mockSticker(story.linkSpot, story.link) : ""}
   <script>
     // Long product names: tighten the letter spacing until the text fits the width
     for (const el of document.querySelectorAll(".brand, .title, .sub")) {
       const text = el.querySelector("span");
       let ls = parseFloat(getComputedStyle(el).letterSpacing) / parseFloat(getComputedStyle(el).fontSize);
-      while (text.getBoundingClientRect().width > ${W - 120} && ls > 0.02) {
+      while (text.getBoundingClientRect().width > ${W - 120} && ls > 0.12) {
         ls -= 0.02;
         el.style.letterSpacing = ls + "em";
         el.style.paddingLeft = ls + "em";
+      }
+      // Still too wide (long brand names): make the text smaller
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while (text.getBoundingClientRect().width > ${W - 120} && size > 20) {
+        size -= 2;
+        el.style.fontSize = size + "px";
       }
     }
     // Price: shrink the number block until it fits inside the starburst
@@ -176,10 +218,24 @@ async function main() {
       const out = path.join(OUT, `${story.slug}.png`);
       await page.screenshot({ path: out, clip: { x: 0, y: 0, width: W, height: H } });
       console.log(`🖼  ${path.relative(process.cwd(), out)}`);
+
+      if (story.linkSpot && story.link) {
+        fs.mkdirSync(path.join(OUT, "preview"), { recursive: true });
+        const pfile = path.join(BUILD, `${story.slug}-preview.html`);
+        fs.writeFileSync(pfile, await html(story, { preview: true }));
+        await page.goto(`file://${pfile}`, { waitUntil: "networkidle0" });
+        await page.evaluate(() => document.fonts.ready);
+        await page.screenshot({ path: path.join(OUT, "preview", `${story.slug}.png`), clip: { x: 0, y: 0, width: W, height: H } });
+      }
     }
   } finally {
     await browser.close();
   }
+
+  // Which product page each story's link sticker should point to
+  const all = require("./stories");
+  const lines = all.filter(s => s.link).map(s => `${s.slug}.png  ->  ${s.link}`);
+  fs.writeFileSync(path.join(OUT, "links.txt"), lines.join("\n") + "\n");
 }
 
 main().catch(err => {
