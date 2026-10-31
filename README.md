@@ -40,10 +40,21 @@ cp .env.example .env   # then fill it in
 |---|---|
 | `CENTRANO_EMAIL`, `CENTRANO_PASSWORD` | Your Centrano dealer login |
 | `SHOPIFY_STORE` | e.g. `pride-scooter.myshopify.com` |
-| `SHOPIFY_ACCESS_TOKEN` | Admin API token (`shpat_…`) with the `write_products` scope. The token from the n8n setup works. |
+| `SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET` | Client ID and secret of a Shopify app from the [Dev Dashboard](https://dev.shopify.com/dashboard). See below. |
+| `SHOPIFY_ACCESS_TOKEN` | Only for an older custom app made in the Shopify admin: its fixed `shpat_…` token, used instead of the client ID/secret |
 | `SHOPIFY_API_VERSION` | Optional, default `2026-07` |
 | `EUR_TO_RON` | Optional, default `4.97` |
 | `PUPPETEER_EXECUTABLE_PATH` | Optional, to use an installed Chrome instead of Puppeteer's |
+
+### Shopify app
+
+Since January 2026, new Shopify apps are created in the [Dev Dashboard](https://dev.shopify.com/dashboard). They come with a client ID and secret instead of a permanent token. Each run, the script exchanges them for an access token that lasts 24 hours (Shopify's *client credentials* grant). For that to work:
+
+1. The app and the store are in the same Shopify organization.
+2. The app's released version includes the **`write_products`** scope.
+3. The app is **installed** on the store (`SHOPIFY_STORE`).
+
+Real runs check the connection before scraping and print `🛒 Shopify: connected to <shop>`. If something is missing, they stop with a message that says what to fix (e.g. `app_not_installed`).
 
 ## Usage
 
@@ -122,5 +133,6 @@ lib/shopify.js     Shopify Admin GraphQL: image uploads and productSet
 - **"Centrano login failed"**: check the credentials in `.env`. The snapshot in `debug/` shows what the login page displayed.
 - **"No products found"**: the search term doesn't match anything on Centrano. Try fewer or different words.
 - **Product type or vendor is wrong/missing**: add the brand to `VENDORS` or a keyword to `PRODUCT_TYPE_ALIASES` in `lib/product.js`.
-- **Shopify `Access denied`**: the token needs the `write_products` scope.
+- **`app_not_installed`**: install the app on the store from the Dev Dashboard.
+- **Missing `write_products` scope / `Access denied`**: add the scope to the app's version in the Dev Dashboard, release it, and approve the update on the store.
 - **Centrano changed its site again**: all selectors live in `lib/centrano.js`. Run with `--show-browser --dry-run` and look at the snapshot in `debug/`.

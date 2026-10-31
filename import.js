@@ -176,14 +176,24 @@ async function main() {
   if (badArgs) process.exit(1);
 
   const dryRun = flags["dry-run"];
-  requireEnv(["CENTRANO_EMAIL", "CENTRANO_PASSWORD", ...(dryRun ? [] : ["SHOPIFY_STORE", "SHOPIFY_ACCESS_TOKEN"])]);
+  // Shopify auth: a Dev Dashboard app's client ID + secret, or a fixed Admin API token
+  const shopifyAuth = process.env.SHOPIFY_ACCESS_TOKEN ? ["SHOPIFY_ACCESS_TOKEN"] : ["SHOPIFY_CLIENT_ID", "SHOPIFY_CLIENT_SECRET"];
+  requireEnv(["CENTRANO_EMAIL", "CENTRANO_PASSWORD", ...(dryRun ? [] : ["SHOPIFY_STORE", ...shopifyAuth])]);
 
   const eurToRon = Number(process.env.EUR_TO_RON || 4.97);
-  const shopify = dryRun ? null : createShopifyClient({
-    store: process.env.SHOPIFY_STORE,
-    accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
-    apiVersion: process.env.SHOPIFY_API_VERSION || "2026-07",
-  });
+  let shopify = null;
+  if (!dryRun) {
+    shopify = createShopifyClient({
+      store: process.env.SHOPIFY_STORE,
+      accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
+      clientId: process.env.SHOPIFY_CLIENT_ID,
+      clientSecret: process.env.SHOPIFY_CLIENT_SECRET,
+      apiVersion: process.env.SHOPIFY_API_VERSION || "2026-07",
+    });
+    // Fail before scraping anything if Shopify isn't reachable or the app can't create products
+    const { shopName } = await shopify.checkAccess();
+    console.log(`🛒 Shopify: connected to ${shopName}`);
+  }
 
   const browser = await puppeteer.launch({
     headless: !flags["show-browser"],

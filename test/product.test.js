@@ -198,3 +198,43 @@ test("links: the title's model name comes from Centrano's product name", () => {
   const complete = { ...tiltDeck, brand: "Core", rawTitle: "CORE CL1 Trotinetă Freestyle", specsHtml: "Înălțime ghidon Lungime deck" };
   assert.equal(buildProduct(complete, null).title, "Trotineta Core CL1");
 });
+
+test("Shopify client exchanges the client ID/secret for a token once and reuses it", async () => {
+  const { createShopifyClient } = require("../lib/shopify");
+  const calls = [];
+  const realFetch = global.fetch;
+  global.fetch = async (url, opts) => {
+    calls.push({ url, opts });
+    if (url.endsWith("/admin/oauth/access_token")) {
+      return new Response(JSON.stringify({ access_token: "token-1", scope: "write_products", expires_in: 86399 }));
+    }
+    return new Response(JSON.stringify({ data: { shop: { name: "Pride" }, currentAppInstallation: { accessScopes: [{ handle: "write_products" }] } } }));
+  };
+  try {
+    const shopify = createShopifyClient({ store: "pride-scooter.myshopify.com", clientId: "id", clientSecret: "secret", apiVersion: "2026-07" });
+    assert.equal((await shopify.checkAccess()).shopName, "Pride");
+    await shopify.checkAccess();
+
+    const tokenCalls = calls.filter(c => c.url.endsWith("/admin/oauth/access_token"));
+    assert.equal(tokenCalls.length, 1);
+    assert.equal(tokenCalls[0].url, "https://pride-scooter.myshopify.com/admin/oauth/access_token");
+    assert.equal(String(tokenCalls[0].opts.body), "grant_type=client_credentials&client_id=id&client_secret=secret");
+    const apiCalls = calls.filter(c => c.url.endsWith("/graphql.json"));
+    assert.equal(apiCalls.length, 2);
+    assert.equal(apiCalls[0].opts.headers["X-Shopify-Access-Token"], "token-1");
+  } finally {
+    global.fetch = realFetch;
+  }
+});
+
+test("Shopify token errors explain what to fix", async () => {
+  const { createShopifyClient } = require("../lib/shopify");
+  const realFetch = global.fetch;
+  global.fetch = async () => new Response("<title>400 - Oauth error app_not_installed</title>", { status: 400 });
+  try {
+    const shopify = createShopifyClient({ store: "pride-scooter.myshopify.com", clientId: "id", clientSecret: "secret", apiVersion: "2026-07" });
+    await assert.rejects(shopify.checkAccess(), /app_not_installed\). The app isn't installed on pride-scooter\.myshopify\.com/);
+  } finally {
+    global.fetch = realFetch;
+  }
+});
