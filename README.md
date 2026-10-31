@@ -6,6 +6,8 @@ It used to be an n8n workflow calling a Puppeteer server through ngrok. Now it's
 
 ```bash
 node import.js "tilt formula deck"
+# or paste a Centrano search link
+node import.js "https://www.centrano.com/advanced_search_result.php?keywords=tilt+formula+deck"
 ```
 
 ```
@@ -62,15 +64,28 @@ node import.js --draft "root type r"
 node import.js --show-browser --dry-run "tilt formula deck"
 ```
 
-Each search term does two jobs. It picks the product on Centrano (the first result whose name contains every word of the term, otherwise the first result) and it becomes the model name in the Shopify title.
+### Search terms, links and IDs
+
+Every argument picks one product on Centrano:
+
+| Argument | Picks the product by | Shopify title model name |
+|---|---|---|
+| `"tilt formula deck"` | Searching Centrano | Your search words: `Deck Tilt Formula` |
+| `"https://www.centrano.com/advanced_search_result.php?keywords=tilt+formula+deck"` | The search in the link | Centrano's product name: `Deck Tilt Formula` |
+| `"https://www.centrano.com/?products_id=49405"` or `"id:49405"` | That exact product | Centrano's product name |
+
+- **Centrano has no product pages.** Clicking a product only opens a popup and the address bar doesn't change. So the "product link" is a **search link**: search on Centrano and copy the address bar.
+- When a search returns several products, the first one whose name contains every search word is used, otherwise the first result. The tool prints the product ID it used (`#49405`) and the other matches, so you can pin a specific product with `id:<number>`.
+- **Put links in quotes.** Otherwise the shell breaks on the `?` and `&` in them.
+- Links to other sites (brand or shop pages) and Centrano links that don't point to a search or product are rejected before anything runs.
 
 ## What it does
 
 1. **Logs in** to Centrano with Puppeteer (headless Chrome).
-2. **Searches** for the term and picks the matching result.
+2. **Finds the product**: searches for the term or link, picks the matching result, or uses the given product ID.
 3. **Reads the product** from the same data Centrano's product popup shows: name, brand, colour groups, variant rows, prices, stock codes, EANs, images, description and specs.
 4. **Builds the Shopify product**:
-   - **Title**: `<type> <vendor> <search term>`, Title Case, duplicate words removed. Vendor names and short all-caps model codes keep their casing, e.g. `Deck Tilt Formula`, `Trotineta Core CL1`, `Sticker TLC`.
+   - **Title**: `<type> <vendor> <model>`, where the model is your search term, or Centrano's product name minus "Trotinetă Freestyle" for links and IDs. Title Case, duplicate words removed. Vendor names and short all-caps model codes keep their casing, e.g. `Deck Tilt Formula`, `Trotineta Core CL1`, `Sticker TLC`.
    - **Vendor / tag**: Centrano's brand, matched against the vendor list in `lib/product.js`.
    - **Product type**: matched from the product name against the type list and aliases (e.g. *grips* → `Mansoane`, *clamp/SCS* → `Clamp`). Complete scooters (specs list both *Înălțime ghidon* and *Lungime deck*) become `Complete` and are titled `Trotineta …`.
    - **Options / variants**: `Colour` from each colour group, `Size` from labelled rows (`Mărime`, `Diametru`, …). Each variant gets its own price, plus Centrano's stock code as SKU and the EAN as barcode. Inventory is tracked, "continue selling when out of stock" is on, and tax is off.

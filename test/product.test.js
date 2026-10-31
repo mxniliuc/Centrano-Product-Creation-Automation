@@ -172,3 +172,29 @@ test("Shopify input has matching options/variants, policy, SKU and barcode", () 
     }
   }
 });
+
+test("arguments: search terms, Centrano links and product IDs", () => {
+  const { parseTarget } = require("../lib/centrano");
+  assert.deepEqual(parseTarget("tilt formula deck"), { term: "tilt formula deck" });
+  assert.deepEqual(parseTarget("https://www.centrano.com/advanced_search_result.php?keywords=tilt+formula+deck"), { keywords: "tilt formula deck" });
+  assert.deepEqual(parseTarget("https://www.centrano.com/ro/advanced_search_result.php?keywords=north%20club%20g4&language=ro"), { keywords: "north club g4" });
+  assert.deepEqual(parseTarget("www.centrano.com/advanced_search_result.php?keywords=root+gt"), { keywords: "root gt" });
+  assert.deepEqual(parseTarget("https://www.centrano.com/?products_id=49405"), { productId: "49405" });
+  assert.deepEqual(parseTarget("id:49405"), { productId: "49405" });
+  assert.deepEqual(parseTarget("#49405"), { productId: "49405" });
+  assert.throws(() => parseTarget("https://www.tiltscooters.com/formula-deck"), /Only Centrano links/);
+  assert.throws(() => parseTarget("https://www.centrano.com/ro/m176.htm"), /doesn't point to a product/);
+});
+
+test("links: the title's model name comes from Centrano's product name", () => {
+  const { modelFromTitle } = require("../lib/product");
+  assert.equal(modelFromTitle("Tilt Formula Deck Trotinetă Freestyle"), "Tilt Formula Deck");
+  assert.equal(modelFromTitle("CORE Grips Trotinetă"), "CORE Grips");
+  assert.equal(modelFromTitle("Indo Bug Trotineta Trambulina"), "Indo Bug Trotineta Trambulina");
+
+  assert.equal(buildProduct(tiltDeck, null).title, "Deck Tilt Formula");
+  const helmet = { ...tiltDeck, brand: "Core", rawTitle: "CORE Action Sports Cască", specsHtml: "" };
+  assert.equal(buildProduct(helmet, null).title, "Casca Core Action Sports");
+  const complete = { ...tiltDeck, brand: "Core", rawTitle: "CORE CL1 Trotinetă Freestyle", specsHtml: "Înălțime ghidon Lungime deck" };
+  assert.equal(buildProduct(complete, null).title, "Trotineta Core CL1");
+});

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // import.js
-// Search Centrano for a product, scrape it, and create it in Shopify.
+// Find a product on Centrano, scrape it, and create it in Shopify.
 //
 //   node import.js "tilt formula deck"
+//   node import.js "https://www.centrano.com/advanced_search_result.php?keywords=tilt+formula+deck"
 //   node import.js --dry-run "core action sports casca" "root air 110mm"
 
 const fs = require("fs");
@@ -16,10 +17,17 @@ const { processImages } = require("./lib/images");
 const { createShopifyClient } = require("./lib/shopify");
 
 const HELP = `
-Usage: node import.js [options] "<search term>" ["<search term>" ...]
+Usage: node import.js [options] "<search term or Centrano link>" [...]
 
-Each search term is looked up on Centrano and the best match is created in Shopify.
-The search term is also used for the product title (e.g. "tilt formula" -> "Deck Tilt Formula").
+Each argument picks one product on Centrano, which is then created in Shopify:
+  "tilt formula deck"     search Centrano; the words also name the product
+                          ("tilt formula deck" -> "Deck Tilt Formula")
+  "https://www.centrano.com/advanced_search_result.php?keywords=tilt+formula+deck"
+                          a Centrano search link copied from the address bar;
+                          the title comes from Centrano's product name
+  "id:49405"              a Centrano product ID (printed as #49405 by this tool)
+
+Put links in quotes, otherwise the shell mangles the ? and & in them.
 
 Options:
   --dry-run        Scrape and save everything to output/, but don't touch Shopify
@@ -66,17 +74,27 @@ function priceRange(variants) {
   return min === max ? `${min} RON` : `${min}–${max} RON`;
 }
 
-async function importOne(page, term, { dryRun, draft, eurToRon, shopify }) {
-  console.log(`\n🔎 "${term}"`);
-  const results = await centrano.search(page, term);
-  if (!results.length) throw new Error("No products found on Centrano for this search");
+async function importOne(page, target, { dryRun, draft, eurToRon, shopify }) {
+  let productId = target.productId;
+  const keywords = target.term || target.keywords || "";
 
-  const pick = centrano.pickResult(results, term);
-  console.log(`   ${results.length} result(s) on Centrano, using: ${pick.name} (#${pick.id})`);
-  for (const other of results.filter(r => r !== pick).slice(0, 4)) console.log(`     · also found: ${other.name}`);
+  if (productId) {
+    console.log(`\n🔗 Centrano product #${productId}`);
+  } else {
+    console.log(target.keywords ? `\n🔗 Centrano link: "${keywords}"` : `\n🔎 "${keywords}"`);
+    const results = await centrano.search(page, keywords);
+    if (!results.length) throw new Error("No products found on Centrano for this search");
 
-  const scraped = await centrano.scrapeProduct(page, pick.id, term);
-  const product = buildProduct(scraped, term, { eurToRon });
+    const pick = centrano.pickResult(results, keywords);
+    console.log(`   ${results.length} result(s) on Centrano, using: ${pick.name} (#${pick.id})`);
+    for (const other of results.filter(r => r !== pick).slice(0, 4)) console.log(`     · also found: ${other.name}`);
+    productId = pick.id;
+  }
+
+  const scraped = await centrano.scrapeProduct(page, productId, keywords);
+  if (target.productId) console.log(`   Centrano: ${scraped.rawTitle}`);
+  // Typed search terms name the product; links and IDs use Centrano's product name
+  const product = buildProduct(scraped, target.term || null, { eurToRon });
 
   console.log(`   Title:    ${product.title}`);
   console.log(`   Vendor:   ${product.vendor || "-"}    Type: ${product.productType || "-"}`);
@@ -144,6 +162,19 @@ async function main() {
     process.exit(flags.help ? 0 : 1);
   }
 
+  // Check every argument before starting the browser
+  const targets = [];
+  let badArgs = 0;
+  for (const arg of terms) {
+    try {
+      targets.push(centrano.parseTarget(arg));
+    } catch (err) {
+      badArgs++;
+      console.error(`❌ ${err.message}`);
+    }
+  }
+  if (badArgs) process.exit(1);
+
   const dryRun = flags["dry-run"];
   requireEnv(["CENTRANO_EMAIL", "CENTRANO_PASSWORD", ...(dryRun ? [] : ["SHOPIFY_STORE", "SHOPIFY_ACCESS_TOKEN"])]);
 
@@ -174,13 +205,13 @@ async function main() {
       throw err;
     }
 
-    for (const term of terms) {
+    for (const target of targets) {
       try {
-        await importOne(page, term, { dryRun, draft: flags.draft, eurToRon, shopify });
+        await importOne(page, target, { dryRun, draft: flags.draft, eurToRon, shopify });
       } catch (err) {
         failures++;
         console.error(`   ❌ ${err.message}`);
-        await saveDebugSnapshot(page, term);
+        await saveDebugSnapshot(page, target.term || target.keywords || target.productId);
       }
     }
   } finally {
