@@ -1,0 +1,174 @@
+// Run with: npm test
+// Fixtures mirror what lib/centrano.js parses out of Centrano's product popup.
+const test = require("node:test");
+const assert = require("node:assert/strict");
+
+const { toRON99, detectProductType, buildTitle, buildVariants, buildProduct } = require("../lib/product");
+const { pickResult } = require("../lib/centrano");
+const { toProductSetInput } = require("../lib/shopify");
+
+const variant = (name, retailEur, extra = {}) => {
+  const labelled = name.match(/^([^:]+):\s*(.+)$/);
+  return {
+    name,
+    optionLabel: labelled ? labelled[1] : null,
+    optionValue: labelled ? labelled[2] : name,
+    retailEur,
+    costEur: retailEur / 2,
+    sku: null,
+    barcode: null,
+    ...extra,
+  };
+};
+
+const tiltDeck = {
+  productId: "49405",
+  brand: "Tilt",
+  rawTitle: "Tilt Formula Deck Trotinetă Freestyle",
+  groups: [{
+    colour: "Negru",
+    images: ["https://images.centrano.com/1800/a.webp", "https://images.centrano.com/1800/b.webp"],
+    variants: [
+      variant('Mărime: 6.0"', 249.95, { sku: "10-43-920", barcode: "739904936855" }),
+      variant('Mărime: 6.5"', 249.95, { sku: "10-44-920", barcode: "739904936534" }),
+    ],
+  }],
+  highestEuro: 249.95,
+  descriptionText: "This is a high performance deck for freestyle scooters.",
+  descriptionHtml: "<p>This is a high performance deck for freestyle scooters.</p>",
+  specsHtml: "<table><tr><td><strong>Lungime deck</strong>:</td><td> 56cm</td></tr><tr><td><strong>Diametru osie</strong>:</td><td> 8mm</td></tr></table>",
+  imageUrls: ["https://images.centrano.com/1800/a.webp", "https://images.centrano.com/1800/b.webp"],
+};
+
+test("EUR -> RON rounds up to the next 5 RON and ends in .99", () => {
+  assert.equal(toRON99(249.95, 4.97), "1244.99");
+  assert.equal(toRON99(12.95, 4.97), "64.99");
+  assert.equal(toRON99(1.95, 4.97), "9.99");
+  assert.equal(toRON99(null, 4.97), null);
+});
+
+test("product type comes from the Centrano title", () => {
+  assert.equal(detectProductType("Tilt Formula Deck Trotinetă Freestyle"), "Deck");
+  assert.equal(detectProductType("CORE Grips Trotinetă"), "Mansoane");
+  assert.equal(detectProductType("CORE Action Sports Cască"), "Casca");
+  assert.equal(detectProductType("Tilt Double Clamp Shim"), "Clamp");
+  assert.equal(detectProductType("Root Air 110mm Roți Trotinetă Freestyle Pachet 2 buc"), "Roti");
+});
+
+test("titles: type first, no duplicate words, vendor and model codes keep their casing", () => {
+  assert.equal(buildTitle("Deck", "Tilt", "tilt formula deck"), "Deck Tilt Formula");
+  assert.equal(buildTitle("Sticker", "TLC", "tlc sticker"), "Sticker TLC");
+  assert.equal(buildTitle("Trotineta", "Core", "core cl1", "CORE CL1 Trotinetă Freestyle"), "Trotineta Core CL1");
+  assert.equal(buildTitle("Clamp", "Root Industries", "root gt clamp", "Root GT Clamp Trotinete Freestyle"), "Clamp Root Industries GT");
+});
+
+test("colour groups with sizes become Colour x Size variants", () => {
+  const { options, variants } = buildVariants({
+    groups: [
+      { colour: "Negru", variants: [variant("Mărime: XS-S", 37.95), variant("Mărime: S-M", 37.95)] },
+      { colour: "Roz", variants: [variant("Mărime: S-M", 29.95)] },
+    ],
+  }, 4.97);
+  assert.deepEqual(options, [
+    { name: "Colour", values: ["Negru", "Roz"] },
+    { name: "Size", values: ["XS-S", "S-M"] },
+  ]);
+  assert.deepEqual(variants.map(v => [v.options.Colour, v.options.Size, v.price]), [
+    ["Negru", "XS-S", "189.99"],
+    ["Negru", "S-M", "189.99"],
+    ["Roz", "S-M", "149.99"],
+  ]);
+});
+
+test("rows that just repeat the colour name become colour-only variants", () => {
+  const { options, variants } = buildVariants({
+    groups: [
+      { colour: "Hulk", variants: [variant("Hulk", 12.95)] },
+      { colour: "Bark", variants: [variant("Bark", 13.95)] },
+    ],
+  }, 4.97);
+  assert.deepEqual(options, [{ name: "Colour", values: ["Hulk", "Bark"] }]);
+  assert.deepEqual(variants.map(v => v.price), ["64.99", "69.99"]);
+});
+
+test("a product with no options becomes a single Default Title variant", () => {
+  const { options, variants } = buildVariants({ groups: [], highestEuro: 10 }, 4.97);
+  assert.deepEqual(options, [{ name: "Title", values: ["Default Title"] }]);
+  assert.equal(variants[0].price, "49.99");
+});
+
+test("every variant gets a value for every option", () => {
+  const { variants } = buildVariants({
+    groups: [
+      { colour: "Negru", variants: [variant("Mărime: S", 10)] },
+      { colour: "Alb", variants: [variant("Alb", 10)] },
+    ],
+  }, 4.97);
+  assert.deepEqual(variants.map(v => v.options), [
+    { Colour: "Negru", Size: "S" },
+    { Colour: "Alb", Size: "One Size" },
+  ]);
+});
+
+test("buildProduct puts it all together", () => {
+  const p = buildProduct(tiltDeck, "tilt formula deck");
+  assert.equal(p.title, "Deck Tilt Formula");
+  assert.equal(p.vendor, "Tilt");
+  assert.deepEqual(p.tags, ["Tilt"]);
+  assert.equal(p.productType, "Deck");
+  assert.equal(p.variants.length, 2);
+  assert.equal(p.variants[0].sku, "10-43-920");
+  assert.match(p.descriptionHtml, /high performance deck[\s\S]*Lungime deck/);
+  assert.deepEqual(p.warnings, []);
+});
+
+test("complete scooters are detected from the specs", () => {
+  const p = buildProduct({
+    ...tiltDeck,
+    brand: "Root Industries",
+    rawTitle: "Root Type R Trotinetă Freestyle",
+    specsHtml: "<td>Înălțime ghidon</td><td>Lungime deck</td>",
+  }, "root type r");
+  assert.equal(p.productType, "Complete");
+  assert.equal(p.title, "Trotineta Root Industries Type R");
+});
+
+test("unknown brands are kept but flagged", () => {
+  const p = buildProduct({ ...tiltDeck, brand: "i-Glide", rawTitle: "i-Glide Trotinetă Grips" }, "i-glide grips");
+  assert.equal(p.vendor, "i-Glide");
+  assert.match(p.warnings.join(" "), /not in the vendor list/);
+});
+
+test("search picks the result that contains every search word", () => {
+  const results = [
+    { id: "1", brand: "Tilt", name: "Tilt Formula Deck Trotinetă Freestyle" },
+    { id: "2", brand: "Tilt", name: "Tilt Formula Griptape" },
+  ];
+  assert.equal(pickResult(results, "tilt formula griptape").id, "2");
+  assert.equal(pickResult(results, "something else").id, "1");
+  assert.equal(pickResult([], "x"), null);
+});
+
+test("Shopify input has matching options/variants, policy, SKU and barcode", () => {
+  const p = buildProduct(tiltDeck, "tilt formula deck");
+  const input = toProductSetInput(p, { status: "DRAFT", mediaSources: ["https://example.com/1.jpg"] });
+  assert.equal(input.status, "DRAFT");
+  assert.deepEqual(input.productOptions.map(o => o.name), ["Colour", "Size"]);
+  assert.deepEqual(input.variants[0], {
+    optionValues: [{ optionName: "Colour", name: "Negru" }, { optionName: "Size", name: '6.0"' }],
+    price: "1244.99",
+    barcode: "739904936855",
+    inventoryPolicy: "CONTINUE",
+    taxable: false,
+    inventoryItem: { tracked: true, requiresShipping: true, sku: "10-43-920" },
+  });
+  assert.deepEqual(input.files, [{ originalSource: "https://example.com/1.jpg", contentType: "IMAGE", alt: "Deck Tilt Formula" }]);
+
+  // Every variant option value must exist in the product options
+  for (const v of input.variants) {
+    for (const ov of v.optionValues) {
+      const opt = input.productOptions.find(o => o.name === ov.optionName);
+      assert.ok(opt.values.some(val => val.name === ov.name), `${ov.optionName}=${ov.name}`);
+    }
+  }
+});

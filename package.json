@@ -1,15 +1,17 @@
 {
-  "name": "centrano-image-scraper",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "centrano-shopify-import",
+  "version": "2.0.0",
+  "description": "Scrape a product from Centrano and create it in Shopify, from the command line.",
+  "main": "import.js",
   "scripts": {
-    "start": "node index.js"
+    "import": "node import.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.12"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^4.21.2",
-    "puppeteer-core": "^21.11.0",
-    "sharp": "^0.34.3"
+    "puppeteer": "^25.16.0",
+    "sharp": "^0.35.5"
   }
 }
