@@ -112,6 +112,17 @@ If any variant ends up without a price, the product is created as a **draft** so
 - `output/<product>/`: `product.json` (everything that was sent or would be sent to Shopify) and the processed images. Written on every run, dry or not.
 - `debug/`: an HTML + screenshot snapshot of the page whenever something fails, which shows exactly what Centrano displayed.
 
+## Instagram stories
+
+`stories/` makes 1080×1920 story images in the shop's usual style: a big brand name, the product name, a red price starburst, and product photos on white.
+
+```bash
+node stories/render.js                 # render every story to stories/out/
+node stories/render.js tilt-nikita     # just one
+```
+
+Each story is an entry in [`stories/stories.js`](stories/stories.js): header text, price, product photos (position, width, rotation), optional colour/size labels and measurement arrows. Photos go in `stories/assets/`. Any product photo on a white background works, e.g. from an importer run's `output/` folder. The white is blended away, so photos can overlap and rotate freely.
+
 ## Tests
 
 ```bash
@@ -126,6 +137,7 @@ lib/centrano.js    login, search and product parsing (runs in the browser)
 lib/product.js     vendor/type detection, title, pricing, options and variants
 lib/images.js      download + resize to 2048×2048
 lib/shopify.js     Shopify Admin GraphQL: image uploads and productSet
+stories/           Instagram story images (render.js + stories.js)
 ```
 
 ## Troubleshooting
