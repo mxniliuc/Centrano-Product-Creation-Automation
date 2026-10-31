@@ -238,3 +238,42 @@ test("Shopify token errors explain what to fix", async () => {
     global.fetch = realFetch;
   }
 });
+
+test("a row that just repeats the product name is not an option", () => {
+  const { options, variants } = buildVariants({
+    rawTitle: "Core SL3 Corey Sponseller Signature Deck Trotinetă Freestyle",
+    groups: [{ colour: null, variants: [variant("Core SL3 Corey Sponseller Signature Deck Trotinetă Freestyle", 154.95)] }],
+  }, 4.97);
+  assert.deepEqual(options, [{ name: "Title", values: ["Default Title"] }]);
+  assert.equal(variants[0].price, "774.99");
+});
+
+test("products are published to the Online Store publication", async () => {
+  const { createShopifyClient } = require("../lib/shopify");
+  const bodies = [];
+  const realFetch = global.fetch;
+  global.fetch = async (url, opts) => {
+    const body = JSON.parse(opts.body);
+    bodies.push(body);
+    if (body.query.includes("publications(")) {
+      return new Response(JSON.stringify({ data: { publications: { nodes: [
+        { id: "gid://shopify/Publication/1", name: "Point of Sale" },
+        { id: "gid://shopify/Publication/2", name: "Online Store" },
+      ] } } }));
+    }
+    return new Response(JSON.stringify({ data: { publishablePublish: { userErrors: [] } } }));
+  };
+  try {
+    const shopify = createShopifyClient({ store: "pride-scooter.myshopify.com", accessToken: "t", apiVersion: "2026-07" });
+    await shopify.publishToOnlineStore("gid://shopify/Product/10");
+    await shopify.publishToOnlineStore("gid://shopify/Product/11");
+    const publishes = bodies.filter(b => b.query.includes("publishablePublish"));
+    assert.equal(bodies.filter(b => b.query.includes("publications(")).length, 1);  // looked up once
+    assert.deepEqual(publishes.map(b => b.variables), [
+      { id: "gid://shopify/Product/10", input: [{ publicationId: "gid://shopify/Publication/2" }] },
+      { id: "gid://shopify/Product/11", input: [{ publicationId: "gid://shopify/Publication/2" }] },
+    ]);
+  } finally {
+    global.fetch = realFetch;
+  }
+});

@@ -74,7 +74,7 @@ function priceRange(variants) {
   return min === max ? `${min} RON` : `${min}–${max} RON`;
 }
 
-async function importOne(page, target, { dryRun, draft, eurToRon, shopify }) {
+async function importOne(page, target, { dryRun, draft, eurToRon, shopify, canPublish }) {
   let productId = target.productId;
   const keywords = target.term || target.keywords || "";
 
@@ -140,6 +140,17 @@ async function importOne(page, target, { dryRun, draft, eurToRon, shopify }) {
   console.log(`   ✅ Created "${created.title}" as ${created.status.toLowerCase()} with ${created.variantsCount.count} variant(s)`);
   console.log(`      ${created.adminUrl}`);
 
+  // Show it on the website (the Online Store sales channel). Drafts are included too,
+  // so they appear as soon as they're set to active.
+  if (canPublish) {
+    try {
+      await shopify.publishToOnlineStore(created.id);
+      console.log("   🌐 Published to the Online Store");
+    } catch (err) {
+      console.warn(`   ⚠️  Created, but not published to the Online Store: ${err.message}`);
+    }
+  }
+
   if (mediaSources.length) {
     const media = await shopify.waitForMedia(created.id);
     console.log(`   🖼  Images: ${media.ready} ready${media.pending ? `, ${media.pending} still processing` : ""}${media.failed.length ? `, ${media.failed.length} failed` : ""}`);
@@ -182,6 +193,7 @@ async function main() {
 
   const eurToRon = Number(process.env.EUR_TO_RON || 4.97);
   let shopify = null;
+  let canPublish = false;
   if (!dryRun) {
     shopify = createShopifyClient({
       store: process.env.SHOPIFY_STORE,
@@ -191,8 +203,13 @@ async function main() {
       apiVersion: process.env.SHOPIFY_API_VERSION || "2026-07",
     });
     // Fail before scraping anything if Shopify isn't reachable or the app can't create products
-    const { shopName } = await shopify.checkAccess();
+    const { shopName, scopes } = await shopify.checkAccess();
     console.log(`🛒 Shopify: connected to ${shopName}`);
+    canPublish = scopes.includes("write_publications");
+    if (!canPublish) {
+      console.warn("⚠️  The Shopify app is missing the read_publications/write_publications scopes, so products will be");
+      console.warn("   created but NOT shown on the website until you add them to the Online Store yourself.");
+    }
   }
 
   const browser = await puppeteer.launch({
@@ -217,7 +234,7 @@ async function main() {
 
     for (const target of targets) {
       try {
-        await importOne(page, target, { dryRun, draft: flags.draft, eurToRon, shopify });
+        await importOne(page, target, { dryRun, draft: flags.draft, eurToRon, shopify, canPublish });
       } catch (err) {
         failures++;
         console.error(`   ❌ ${err.message}`);
@@ -228,7 +245,7 @@ async function main() {
     await browser.close();
   }
 
-  if (terms.length > 1) console.log(`\nDone: ${terms.length - failures} of ${terms.length} imported.`);
+  if (terms.length > 1) console.log(`\nDone: ${terms.length - failures} of ${terms.length} ${dryRun ? "processed" : "imported"}.`);
   process.exitCode = failures ? 1 : 0;
 }
 

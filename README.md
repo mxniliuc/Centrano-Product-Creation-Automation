@@ -51,7 +51,7 @@ cp .env.example .env   # then fill it in
 Since January 2026, new Shopify apps are created in the [Dev Dashboard](https://dev.shopify.com/dashboard). They come with a client ID and secret instead of a permanent token. Each run, the script exchanges them for an access token that lasts 24 hours (Shopify's *client credentials* grant). For that to work:
 
 1. The app and the store are in the same Shopify organization.
-2. The app's released version includes the **`write_products`** scope.
+2. The app's released version includes the scopes **`write_products`**, **`read_publications`** and **`write_publications`**. The publications scopes let the script put products on the website (the Online Store sales channel).
 3. The app is **installed** on the store (`SHOPIFY_STORE`).
 
 Real runs check the connection before scraping and print `🛒 Shopify: connected to <shop>`. If something is missing, they stop with a message that says what to fix (e.g. `app_not_installed`).
@@ -103,7 +103,7 @@ Every argument picks one product on Centrano:
    - **Price**: Centrano's recommended retail price (€) × `EUR_TO_RON`, rounded **up** to the next 5 RON and ending in `.99` (e.g. 249.95 € → 1244.99 RON). On supplier promos, the regular retail price is used.
    - **Description**: Centrano's description followed by the specs table.
 5. **Processes images**: every image is downloaded and fit into 2048×2048 on a white background as a JPEG.
-6. **Creates the product** in Shopify with all options, variants and images in one call (GraphQL `productSet`). Images are uploaded straight to Shopify, so nothing has to be publicly hosted. If an upload fails, Centrano's original image URL is used instead.
+6. **Creates the product** in Shopify with all options, variants and images in one call (GraphQL `productSet`), then **publishes it to the Online Store** so it shows on the website. Images are uploaded straight to Shopify, so nothing has to be publicly hosted. If an upload fails, Centrano's original image URL is used instead.
 
 If any variant ends up without a price, the product is created as a **draft** so nothing goes live at 0 RON.
 
@@ -134,5 +134,6 @@ lib/shopify.js     Shopify Admin GraphQL: image uploads and productSet
 - **"No products found"**: the search term doesn't match anything on Centrano. Try fewer or different words.
 - **Product type or vendor is wrong/missing**: add the brand to `VENDORS` or a keyword to `PRODUCT_TYPE_ALIASES` in `lib/product.js`.
 - **`app_not_installed`**: install the app on the store from the Dev Dashboard.
+- **"products will be created but NOT shown on the website"**: the app is missing `read_publications`/`write_publications`. Add them like `write_products` below, or publish the products in Shopify admin (select them → *Include in sales channels* → Online Store).
 - **Missing `write_products` scope / `Access denied`**: add the scope to the app's version in the Dev Dashboard, release it, and approve the update on the store.
 - **Centrano changed its site again**: all selectors live in `lib/centrano.js`. Run with `--show-browser --dry-run` and look at the snapshot in `debug/`.
