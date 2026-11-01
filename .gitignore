@@ -5,3 +5,6 @@ debug/
 .DS_Store
 stories/out/
 stories/.build/
+feed/out/
+feed/.build/
+feed/clips/
