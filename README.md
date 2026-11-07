@@ -123,6 +123,21 @@ node stories/render.js tilt-nikita     # just one
 
 Each story is an entry in [`stories/stories.js`](stories/stories.js): header text, price, product photos (position, width, rotation), optional colour/size labels and measurement arrows. Photos go in `stories/assets/`. Any product photo on a white background works, e.g. from an importer run's `output/` folder. The white is blended away, so photos can overlap and rotate freely.
 
+## Instagram feed posts
+
+`feed/` plans the feed (one post a day: team rider → product → riders who tagged us) and renders the product carousels at 1080×1350.
+
+```bash
+node feed/render.js              # every carousel in feed/posts.js → feed/out/
+node feed/board.js               # the plan in feed/schedule.js → feed/out/feed-schedule.png
+```
+
+How posts are picked, tagged and scheduled in Business Suite is written up in [AGENTS.md](AGENTS.md).
+
+## Working with an AI assistant
+
+[AGENTS.md](AGENTS.md) holds the context an AI assistant needs: the shop's conventions, who's on the team, brand handles, the Business Suite steps and what's currently scheduled. [GEMINI.md](GEMINI.md) imports it for Gemini CLI. Other tools read AGENTS.md directly.
+
 ## Tests
 
 ```bash
@@ -137,7 +152,9 @@ lib/centrano.js    login, search and product parsing (runs in the browser)
 lib/product.js     vendor/type detection, title, pricing, options and variants
 lib/images.js      download + resize to 2048×2048
 lib/shopify.js     Shopify Admin GraphQL: image uploads and productSet
-stories/           Instagram story images (render.js + stories.js)
+stories/           Instagram story images (render.js + stories.js) and their schedule board
+feed/              Instagram feed plan, product carousels, background cutouts, clip shrinker
+AGENTS.md          context for AI assistants (GEMINI.md imports it)
 ```
 
 ## Troubleshooting
